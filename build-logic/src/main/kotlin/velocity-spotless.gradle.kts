@@ -10,6 +10,8 @@ extensions.configure<SpotlessExtension> {
             targetExclude("**/java/com/velocitypowered/api/util/Ordered.java")
         } else {
             licenseHeaderFile(rootProject.file("HEADER.txt"))
+            // Our own code isn't upstream Velocity and doesn't carry their GPL header.
+            targetExclude("**/java/net/sunnysmp/**")
         }
         //removeUnusedImports() // TODO: temp... somehow broke
     }

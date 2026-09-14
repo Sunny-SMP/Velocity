@@ -106,6 +106,9 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.translation.MiniMessageTranslationStore;
 import net.kyori.adventure.translation.GlobalTranslator;
+import net.sunnysmp.proxy.command.SentryCommand;
+import net.sunnysmp.proxy.config.SunnyConfiguration;
+import net.sunnysmp.proxy.sentry.SentryManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bstats.MetricsBase;
@@ -156,6 +159,7 @@ public class VelocityServer implements ProxyServer, ForwardingAudience {
   private final ConnectionManager cm;
   private final ProxyOptions options;
   private @MonotonicNonNull VelocityConfiguration configuration;
+  private @MonotonicNonNull SunnyConfiguration sunnyConfiguration;
   private @MonotonicNonNull KeyPair serverKeyPair;
   private final ServerMap servers;
   private final VelocityCommandManager commandManager;
@@ -195,6 +199,15 @@ public class VelocityServer implements ProxyServer, ForwardingAudience {
   @Override
   public VelocityConfiguration getConfiguration() {
     return this.configuration;
+  }
+
+  /**
+   * Returns the Sunny-specific configuration read from {@code sunny.toml}.
+   *
+   * @return the configuration
+   */
+  public SunnyConfiguration sunnyConfiguration() {
+    return this.sunnyConfiguration;
   }
 
   @Override
@@ -294,6 +307,10 @@ public class VelocityServer implements ProxyServer, ForwardingAudience {
     new SendCommand(this).register();
 
     this.doStartupConfigLoad();
+
+    this.sunnyConfiguration = SunnyConfiguration.readOrDefault(SunnyConfiguration.DEFAULT_PATH);
+    SentryManager.start(sunnyConfiguration.sentry());
+    new SentryCommand(this).register();
 
     registerTranslations();
 
@@ -639,6 +656,11 @@ public class VelocityServer implements ProxyServer, ForwardingAudience {
 
       // Since we manually removed the shutdown hook, we need to handle the shutdown ourselves.
       LogManager.shutdown();
+
+      // Deliberately after the line above: async loggers mean an error raised during shutdown is
+      // still sitting in the ring buffer at this point, and LogManager.shutdown() is what drains
+      // it into the appender. Stopping Sentry any earlier silently drops those events.
+      SentryManager.stop();
 
       shutdown = true;
 

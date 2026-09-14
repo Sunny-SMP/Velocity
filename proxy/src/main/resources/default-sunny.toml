@@ -1,0 +1,26 @@
+# Configuration for the Sunny SMP additions to the proxy.
+#
+# This is separate from velocity.toml on purpose: nothing upstream reads it, so
+# updating the Velocity fork never conflicts with our settings.
+
+# Config version. Do not change this: the proxy uses it to migrate older files, and
+# a wrong value here will either skip a migration or replay one.
+config-version = "1.0"
+
+[sentry]
+# Your Sentry DSN, from Settings -> Projects -> (project) -> Client Keys (DSN).
+# Leave this empty to disable Sentry entirely.
+dsn = ""
+
+# Environment name attached to every event (e.g. PRODUCTION, STAGING, TESTING).
+environment = "PRODUCTION"
+
+# The name reported with every event, used to tell proxies apart in Sentry.
+# Leave this empty to fall back to the machine's host name. Inside a container that
+# is the container ID, which changes on every restart, so set something stable.
+server-name = ""
+
+# Tags attached to every event, for filtering and grouping in Sentry. Add whatevers
+# is useful; the keys below are only a starting point.
+[sentry.tags]
+#server = "prod-1"
