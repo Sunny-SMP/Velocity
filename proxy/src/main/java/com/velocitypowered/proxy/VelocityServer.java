@@ -578,8 +578,30 @@ public class VelocityServer implements ProxyServer, ForwardingAudience {
     commandManager.setAnnounceProxyCommands(newConfiguration.isAnnounceProxyCommands());
     ipAttemptLimiter = Ratelimiters.createWithMilliseconds(newConfiguration.getLoginRatelimit());
     this.configuration = newConfiguration;
+    reloadSunnyConfiguration();
     eventManager.fireAndForget(new ProxyReloadEvent());
     return true;
+  }
+
+  /**
+   * Re-reads {@code sunny.toml} and applies it.
+   *
+   * <p>A broken file leaves the running configuration untouched: a typo in a fork-specific setting
+   * must not tear down error reporting on a live proxy, and the rest of the reload has already
+   * succeeded by this point.</p>
+   */
+  private void reloadSunnyConfiguration() {
+    final SunnyConfiguration newSunnyConfiguration;
+    try {
+      newSunnyConfiguration = SunnyConfiguration.read(SunnyConfiguration.DEFAULT_PATH);
+    } catch (final Exception e) {
+      logger.error("Unable to reload {}; keeping the configuration already in use.",
+          SunnyConfiguration.DEFAULT_PATH, e);
+      return;
+    }
+
+    this.sunnyConfiguration = newSunnyConfiguration;
+    SentryManager.reload(newSunnyConfiguration.sentry());
   }
 
   /**

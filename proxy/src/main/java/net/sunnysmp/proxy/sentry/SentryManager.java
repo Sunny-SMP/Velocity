@@ -85,6 +85,37 @@ public final class SentryManager {
   }
 
   /**
+   * Applies a freshly read configuration, restarting Sentry only when something actually changed.
+   *
+   * <p>Called from the proxy's reload, so the {@code [sentry]} section of {@code sunny.toml}
+   * behaves like the rest of the configuration: adding a DSN switches reporting on, removing it
+   * switches it off, and changing the environment, server name or tags takes effect without a
+   * restart.</p>
+   *
+   * <p>Identical settings are left alone, so a reload that doesn't touch the section never drops
+   * events that are still queued.</p>
+   *
+   * @param configured the settings just read from disk
+   */
+  public static synchronized void reload(final SentrySettings configured) {
+    if (!configured.isEnabled()) {
+      if (appender != null) {
+        stop();
+        logger.info("Sentry disabled; the configuration no longer has a DSN.");
+      }
+      return;
+    }
+
+    if (appender != null) {
+      if (configured.equals(settings)) {
+        return;
+      }
+      stop();
+    }
+    start(configured);
+  }
+
+  /**
    * Detaches the appender and shuts the SDK down, flushing anything still queued.
    *
    * <p>Safe to call when Sentry was never started. Call this after the logger context has been
