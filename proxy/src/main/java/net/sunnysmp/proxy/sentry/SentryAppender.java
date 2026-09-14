@@ -160,8 +160,11 @@ public final class SentryAppender extends AbstractAppender {
       event.setThrowable(new ExceptionMechanismException(mechanism, thrown, Thread.currentThread()));
     }
 
+    if (logEvent.getLoggerName() != null) {
+      event.setTag("logger", logEvent.getLoggerName());
+    }
     if (logEvent.getThreadName() != null) {
-      event.setExtra("thread_name", logEvent.getThreadName());
+      event.setTag("thread", logEvent.getThreadName());
     }
     if (logEvent.getMarker() != null) {
       event.setExtra("marker", logEvent.getMarker().toString());
