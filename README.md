@@ -8,6 +8,19 @@ and flexibility.
 
 Velocity is licensed under the GPLv3 license.
 
+## Fork
+
+Sunny SMP's fork of Velocity. On top of upstream it adds:
+
+* **Extra API events** — `ConnectionDroppedEvent`, `ValidateSessionEvent` and
+  `PlayerServerBrandEvent`.
+* **No reconfigure stage** — server switches stay in the play state, with
+  scoreboard/team and known-packs state cleaned up by the proxy instead.
+* **Sentry integration** — error reporting via a log appender, a `/sentry`
+  command, and a `sunny.toml` config alongside `velocity.toml`.
+* Larger inbound plugin message limit (for Axiom), boss bar clearing fixes, and
+  publishing of the fork's artifacts to our Maven repo.
+
 ## Goals
 
 * A codebase that is easy to dive into and consistently follows best practices
