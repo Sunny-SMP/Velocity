@@ -99,3 +99,4 @@ native/libdeflate
 native/src/main/resources/linux_x86_64/velocity-cipher.so
 ### Claude ###
 CLAUDE.md
+graphify-out/
