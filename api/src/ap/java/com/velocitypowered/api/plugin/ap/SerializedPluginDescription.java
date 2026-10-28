@@ -28,15 +28,15 @@ public final class SerializedPluginDescription {
   public static final Pattern ID_PATTERN = Pattern.compile(ID_PATTERN_STRING);
 
   // @Nullable is used here to make GSON skip these in the serialized file
-  private final String id;
-  private final @Nullable String name;
-  private final @Nullable String version;
-  private final @Nullable String description;
-  private final @Nullable String url;
-  private final @Nullable List<String> authors;
-  private final @Nullable List<Dependency> dependencies;
-  private final @Nullable List<String> provides;
-  private final String main;
+  private String id;
+  private @Nullable String name;
+  private @Nullable String version;
+  private @Nullable String description;
+  private @Nullable String url;
+  private @Nullable List<String> authors;
+  private @Nullable List<Dependency> dependencies;
+  private @Nullable List<String> provides;
+  private String main;
 
   private SerializedPluginDescription(String id, String name, String version, String description,
       String url,
@@ -149,8 +149,8 @@ public final class SerializedPluginDescription {
    */
   public static final class Dependency {
 
-    private final String id;
-    private final boolean optional;
+    private String id;
+    private boolean optional;
 
     public Dependency(String id, boolean optional) {
       this.id = id;
