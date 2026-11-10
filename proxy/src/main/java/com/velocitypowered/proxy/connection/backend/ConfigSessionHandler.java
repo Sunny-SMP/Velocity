@@ -305,7 +305,9 @@ public class ConfigSessionHandler implements MinecraftSessionHandler {
 
   @Override
   public boolean handle(RegistrySyncPacket packet) {
-    serverConn.getPlayer().getConnection().write(packet.retain());
+    if (serverConn.getPlayer().getConnection().getActiveSessionHandler() instanceof ClientConfigSessionHandler) {
+      serverConn.getPlayer().getConnection().write(packet.retain());
+    }
     return true;
   }
 
@@ -393,7 +395,9 @@ public class ConfigSessionHandler implements MinecraftSessionHandler {
 
   @Override
   public boolean handle(CodeOfConductPacket packet) {
-    this.serverConn.getPlayer().getConnection().write(packet.retain());
+    if (serverConn.getPlayer().getConnection().getActiveSessionHandler() instanceof ClientConfigSessionHandler) {
+      this.serverConn.getPlayer().getConnection().write(packet.retain());
+    }
     return true;
   }
 
