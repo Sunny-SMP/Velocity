@@ -195,6 +195,7 @@ public class ConnectedPlayer implements MinecraftConnectionAssociation, Player, 
   private final BundleDelimiterHandler bundleHandler = new BundleDelimiterHandler(this);
 
   private @Nullable String clientBrand;
+  private @Nullable String configuredGameVersion;
   private @Nullable Locale effectiveLocale;
   private final @Nullable IdentifiedKey playerKey;
   private @Nullable ClientSettingsPacket clientSettingsPacket;
@@ -334,6 +335,21 @@ public class ConnectedPlayer implements MinecraftConnectionAssociation, Player, 
   @Override
   public PlayerSettings getPlayerSettings() {
     return settings == null ? ClientSettingsWrapper.DEFAULT : this.settings;
+  }
+
+  /**
+   * Gets the game version of the backend whose registries the client was last configured with,
+   * taken from the {@code minecraft:core} known pack. Used to decide whether a server switch can
+   * skip the configuration stage.
+   *
+   * @return the game version, or {@code null} if unknown
+   */
+  public @Nullable String getConfiguredGameVersion() {
+    return configuredGameVersion;
+  }
+
+  public void setConfiguredGameVersion(@Nullable String configuredGameVersion) {
+    this.configuredGameVersion = configuredGameVersion;
   }
 
   @Nullable

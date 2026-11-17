@@ -31,6 +31,7 @@ import com.velocitypowered.proxy.VelocityServer;
 import com.velocitypowered.proxy.connection.MinecraftConnection;
 import com.velocitypowered.proxy.connection.MinecraftSessionHandler;
 import com.velocitypowered.proxy.connection.client.ClientConfigSessionHandler;
+import com.velocitypowered.proxy.connection.client.ClientPlaySessionHandler;
 import com.velocitypowered.proxy.connection.client.ConnectedPlayer;
 import com.velocitypowered.proxy.connection.player.resourcepack.VelocityResourcePackInfo;
 import com.velocitypowered.proxy.connection.player.resourcepack.handler.ResourcePackHandler;
@@ -337,13 +338,24 @@ public class ConfigSessionHandler implements MinecraftSessionHandler {
 
   @Override
   public boolean handle(KnownPacksPacket packet) {
-    // Server expects us to reply to this packet
-    if (serverConn.getPlayer().getConnection().getState() != StateRegistry.CONFIG) {
+    final ConnectedPlayer player = serverConn.getPlayer();
+    final String backendVersion = coreVersion(packet);
+
+    if (player.getConnection().getState() == StateRegistry.CONFIG) {
+      // The client is being configured by this backend: remember which version its registries
+      // come from and let it answer.
+      player.setConfiguredGameVersion(backendVersion);
+      return false; // forward
+    }
+
+    if (backendVersion != null && backendVersion.equals(player.getConfiguredGameVersion())) {
+      // Same game version as the registries the client already has: skip the configuration stage
+      // and answer the backend ourselves.
       List<KnownPacksPacket.KnownPack> clientPacks = List.of(
           new KnownPacksPacket.KnownPack(
               "minecraft",
               "core",
-              serverConn.getPlayer().getProtocolVersion().getVersionIntroducedIn()
+              player.getProtocolVersion().getVersionIntroducedIn()
           )
       );
       serverConn.ensureConnected().write(
@@ -356,7 +368,23 @@ public class ConfigSessionHandler implements MinecraftSessionHandler {
       );
       return true;
     }
-    return false; // forward
+
+    // Different (or unknown) game version: the client needs this backend's registries, so send
+    // it through the configuration stage before letting it answer.
+    if (!(player.getConnection().getActiveSessionHandler() instanceof ClientPlaySessionHandler playHandler)) {
+      return false; // forward
+    }
+    final MinecraftConnection smc = serverConn.ensureConnected();
+    smc.setAutoReading(false);
+    playHandler.doSwitch().thenRunAsync(() -> {
+      player.setConfiguredGameVersion(backendVersion);
+      player.getConnection().write(packet);
+      smc.setAutoReading(true);
+    }, smc.eventLoop()).exceptionally(ex -> {
+      switchFailure(ex);
+      return null;
+    });
+    return true;
   }
 
   @Override
@@ -451,6 +479,15 @@ public class ConfigSessionHandler implements MinecraftSessionHandler {
     if (player.resourcePackHandler().getFirstAppliedPack() == null && resourcePackToApply != null) {
       player.resourcePackHandler().queueResourcePack(resourcePackToApply);
     }
+  }
+
+  private static String coreVersion(KnownPacksPacket packet) {
+    for (KnownPacksPacket.KnownPack pack : packet.getPacks()) {
+      if (pack.namespace().equals("minecraft") && pack.id().equals("core")) {
+        return pack.version();
+      }
+    }
+    return null;
   }
 
   /**

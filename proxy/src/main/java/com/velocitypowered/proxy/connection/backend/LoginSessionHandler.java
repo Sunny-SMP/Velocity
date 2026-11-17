@@ -163,7 +163,15 @@ public class LoginSessionHandler implements MinecraftSessionHandler {
       if (player.getClientSettingsPacket() != null) {
         smc.write(player.getClientSettingsPacket());
       }
-      if (!(player.getConnection().getActiveSessionHandler() instanceof ClientPlaySessionHandler)) {
+      if (player.getConnection().getActiveSessionHandler() instanceof ClientPlaySessionHandler clientPlaySessionHandler) {
+        if (player.getProtocolVersion().lessThan(ProtocolVersion.MINECRAFT_1_20_5)) {
+          // No known packs before 1.20.5, so we cannot tell whether the backends share a game
+          // version. Always reconfigure the client.
+          smc.setAutoReading(false);
+          clientPlaySessionHandler.doSwitch().thenRunAsync(() -> smc.setAutoReading(true), smc.eventLoop());
+        }
+        // Otherwise ConfigSessionHandler decides once the backend sends its known packs.
+      } else {
         // Initial login - the player is already in configuration state.
         server.getEventManager().fireAndForget(new PlayerEnteredConfigurationEvent(player, serverConn));
       }
